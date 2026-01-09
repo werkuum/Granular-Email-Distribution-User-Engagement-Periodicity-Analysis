@@ -1,0 +1,43 @@
+select distinct sent_month,
+account_id,
+sent_msg_percent_from_this_month,
+first_sent_date,
+last_sent_date
+from(
+select
+sent_month,
+account_id,
+ min(sent_date) over (partition by account_id, sent_month) as first_sent_date,
+  max(sent_date) over (partition by account_id, sent_month) as last_sent_date,
+sum(cnt_msg) over (partition by account_id, sent_month)/
+(sum(cnt_msg) over (partition by sent_month)*100) as sent_msg_percent_from_this_month
+
+
+from (
+  select
+    ac.id as account_id,
+
+
+
+
+  date_add(s.date, interval es.sent_date day) as sent_date,
+    date(
+      extract(year from date_add(s.date, interval es.sent_date day)),
+      extract(month from date_add(s.date, interval es.sent_date day)),
+      1
+    ) as sent_month,
+    COUNT(id_message) AS cnt_msg
+
+
+
+
+  from `data-analytics-mate.DA.email_sent` es
+  join `data-analytics-mate.DA.account_session` acs
+    on es.id_account = acs.account_id
+  join `data-analytics-mate.DA.session` s
+    on acs.ga_session_id = s.ga_session_id
+  join `data-analytics-mate.DA.account` ac
+    on es.id_account = ac.id
+    group by sent_month, account_id, s.date, es.sent_date
+)) t
+ 
